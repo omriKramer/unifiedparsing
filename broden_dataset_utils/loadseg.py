@@ -1,6 +1,6 @@
 
 import numpy
-from scipy.misc import imread
+from imageio import imread
 
 
 class AbstractSegmentation:
