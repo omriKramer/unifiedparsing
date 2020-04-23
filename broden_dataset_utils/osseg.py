@@ -3,7 +3,7 @@ import os
 from csv import DictReader
 
 import numpy
-from scipy.misc import imread
+from imageio import imread
 
 from .loadseg import AbstractSegmentation
 

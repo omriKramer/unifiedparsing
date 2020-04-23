@@ -6,7 +6,7 @@ from collections import namedtuple
 
 import numpy
 from scipy.io import loadmat
-from scipy.misc import imread
+from imageio import imread
 
 from .loadseg import AbstractSegmentation
 
