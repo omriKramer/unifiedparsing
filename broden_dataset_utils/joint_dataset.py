@@ -1,4 +1,3 @@
-
 import csv
 import json
 import operator
@@ -9,7 +8,6 @@ from collections import namedtuple
 import numpy
 
 from . import adeseg
-from . import dtdseg
 from . import osseg
 from . import pascalseg
 
@@ -25,14 +23,14 @@ class BrodenDataset:
         # Dataset 1:    ADE20K. object, part, scene. 
         #               use resized data, use 1 level of the part seg. 
         ade = adeseg.AdeSegmentation(
-                directory=os.path.join(broden_dataset_root, "ade20k"),
-                version='ADE20K_2016_07_26')
+            directory=os.path.join(broden_dataset_root, "ade20k"),
+            version='ADE20K_2016_07_26')
 
         # Dataset 2:    Pascal context, Pascal part. object, part.
         #               collapse objectives, remove distinction between upper-arm, lower-arm, etc.
         pascal = pascalseg.PascalSegmentation(
-                directory=os.path.join(broden_dataset_root, "pascal"),
-                collapse_adjectives=set(['left', 'right', 'front', 'back', 'upper', 'lower', 'side']))
+            directory=os.path.join(broden_dataset_root, "pascal"),
+            collapse_adjectives=set(['left', 'right', 'front', 'back', 'upper', 'lower', 'side']))
 
         # Dataset 3:    dtd. texture.
         # dtd = dtdseg.DtdSegmentation(
@@ -53,8 +51,8 @@ class BrodenDataset:
         self.record_list['train'].append(get_records(
             os.path.join(self.broden_dataset_info, 'broden_os_train.json')))
         self.record_list['validation'] = \
-                get_records(os.path.join(self.broden_dataset_info, "broden_ade20k_pascal_val.json")) + \
-                get_records(os.path.join(self.broden_dataset_info, 'broden_os_val.json'))
+            get_records(os.path.join(self.broden_dataset_info, "broden_ade20k_pascal_val.json")) + \
+            get_records(os.path.join(self.broden_dataset_info, 'broden_os_val.json'))
 
         """ recover object, part, scene, material and texture. """
 
@@ -71,9 +69,9 @@ class BrodenDataset:
         # recover assignments 
         self.assignments = {}
         for l in restore_csv(os.path.join(self.broden_dataset_info, 'label_assignment.csv')):
-            self.assignments[(l.dataset, l.category, int(l.raw_label))] = int(l.broden_label) 
+            self.assignments[(l.dataset, l.category, int(l.raw_label))] = int(l.broden_label)
         index_max = build_histogram(
-                [((ds, cat), i) for ds, cat, i in list(self.assignments.keys())], max)
+            [((ds, cat), i) for ds, cat, i in list(self.assignments.keys())], max)
         self.index_mapping = dict([k, numpy.zeros(i + 1, dtype=numpy.int16)] for k, i in list(index_max.items()))
         for (ds, cat, old_index), new_index in list(self.assignments.items()):
             self.index_mapping[(ds, cat)][old_index] = new_index
@@ -94,7 +92,7 @@ class BrodenDataset:
         #   scene_label: empty when scene_label == -1
         #   texture_label: empty when texture_label == -1
         #   material, valid_mat: empty when valid_mat == 0
-       
+
         # decode metadata
         ds = self.data_sets[record["dataset"]]
         md = ds.metadata(record["file_index"])
@@ -123,7 +121,6 @@ class BrodenDataset:
             # part
             seg_part = full_seg["part"]
             if len(seg_part) == 0:
-
                 data = {
                     "img": img,
                     "seg_obj": seg_obj,
@@ -143,8 +140,8 @@ class BrodenDataset:
             seg_part = self.index_mapping[(record["dataset"], "part")][seg_part]
 
             assert img.shape[:2] == seg_obj.shape and img.shape[:2] == seg_part.shape, \
-                    "dataset: {} file_index: {}".format(record["dataset"], record["file_index"])
-           
+                "dataset: {} file_index: {}".format(record["dataset"], record["file_index"])
+
             # decode valid obj-parts. 
             for obj_part_index in range(self.nr_object_with_part):
                 obj_label = self.object_with_part[obj_part_index]
@@ -152,14 +149,14 @@ class BrodenDataset:
                 obj_mask = (seg_obj == obj_label)
                 present_part_labels = numpy.unique(seg_part * obj_mask)
                 present_valid_part_labels = numpy.intersect1d(
-                        valid_part_labels, present_part_labels)
+                    valid_part_labels, present_part_labels)
                 if len(present_valid_part_labels) <= 1:
-                    continue 
+                    continue
                 valid_part[obj_part_index] = True
                 for v_p_label in present_valid_part_labels:
                     v_p_index = valid_part_labels.index(v_p_label)
                     batch_seg_part[obj_part_index] += numpy.asarray(
-                            (seg_part == v_p_label) * obj_mask * v_p_index, dtype=numpy.uint8)
+                        (seg_part == v_p_label) * obj_mask * v_p_index, dtype=numpy.uint8)
 
             data = {
                 "img": img,
@@ -196,7 +193,7 @@ class BrodenDataset:
         # only use material in os. 
         elif record['dataset'] == 'os':
             valid_mat = 1
-            seg_material = self.index_mapping[('os', 'material')][full_seg['material']] 
+            seg_material = self.index_mapping[('os', 'material')][full_seg['material']]
             seg_material = numpy.asarray(seg_material, dtype=numpy.uint8)
 
             data = {
@@ -241,3 +238,8 @@ def restore_csv(csv_path):
         lines = [Row(*r) for r in f_csv]
     return lines
 
+
+try:
+    broden_dataset = BrodenDataset()
+except:
+    broden_dataset = None
