@@ -4,11 +4,23 @@ import os
 import cv2
 import numpy as np
 import torch
-from scipy.misc import imread, imresize
+from imageio import imread
+from PIL import Image
 from torchvision import transforms
 
 import lib.utils.data as torchdata
 from broden_dataset_utils.joint_dataset import broden_dataset
+
+
+def imresize(arr, size, interp):
+    size = size[1], size[0]
+    if interp == 'nearest':
+        interp = Image.NEAREST
+    elif interp == 'bilinear':
+        interp = Image.BILINEAR
+    else:
+        raise ValueError(interp)
+    return np.array(Image.fromarray(arr).resize(size, resample=interp))
 
 
 # Round x to the nearest multiple of p and x' >= x
