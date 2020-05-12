@@ -16,11 +16,11 @@ from . import pascalseg
 
 class BrodenDataset:
 
-    def __init__(self):
+    def __init__(self, root='./broden_dataset'):
 
         """ data sets """
 
-        broden_dataset_root = "./broden_dataset"
+        broden_dataset_root = root
 
         # Dataset 1:    ADE20K. object, part, scene. 
         #               use resized data, use 1 level of the part seg. 
@@ -241,5 +241,3 @@ def restore_csv(csv_path):
         lines = [Row(*r) for r in f_csv]
     return lines
 
-
-broden_dataset = BrodenDataset()

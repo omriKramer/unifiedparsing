@@ -43,5 +43,5 @@ class AbstractSegmentation:
         return data
 
     def image_data(self, i):
-        return imread(self.filename(i), mode='RGB')
+        return imread(self.filename(i))
 
