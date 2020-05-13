@@ -20,7 +20,8 @@ def imresize(arr, size, interp):
         interp = Image.BILINEAR
     else:
         raise ValueError(interp)
-    return np.array(Image.fromarray(arr).resize(size, resample=interp))
+    out = np.array(Image.fromarray(arr).resize(size, resample=interp))
+    return out
 
 
 # Round x to the nearest multiple of p and x' >= x
@@ -175,6 +176,8 @@ class TrainDataset(torchdata.Dataset):
 
             # img
             img = imresize(img, (batch_resized_size[i, 0], batch_resized_size[i, 1]), interp='bilinear')
+            if img.ndim == 2:
+                img = np.repeat(img[..., None], 3, axis=2)
             img = img.astype(np.float32)[:, :, ::-1]  # RGB to BGR!!!
             img = img.transpose((2, 0, 1))
             img = self.img_transform(torch.from_numpy(img.copy()))
