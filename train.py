@@ -36,6 +36,8 @@ def train(segmentation_module, iterator, optimizers, history, epoch, args):
     for i in range(args.epoch_iters):
 
         batch_data, src_idx = next(iterator)
+        if isinstance(batch_data, list):
+            batch_data = batch_data[0]
 
         data_time.update(time.time() - tic)
 
