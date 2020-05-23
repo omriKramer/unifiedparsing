@@ -27,7 +27,7 @@ def train(segmentation_module, iterator, optimizers, history, epoch, args):
     names = ['object', 'part', 'scene', 'material']
     ave_losses = {n: AverageMeter() for n in names}
     ave_metric = {n: AverageMeter() for n in names}
-    ave_losses['total'] = AverageMeter() 
+    ave_losses['total'] = AverageMeter()
 
     segmentation_module.train(not args.fix_bn)
 
@@ -67,10 +67,10 @@ def train(segmentation_module, iterator, optimizers, history, epoch, args):
         if i % args.disp_iter == 0:
             loss_info = "Loss: total {:.4f}, ".format(ave_losses['total'].average())
             loss_info += ", ".join(["{} {:.2f}".format(
-                n[0], ave_losses[n].average() 
+                n[0], ave_losses[n].average()
                 if ave_losses[n].average() is not None else 0) for n in names])
             acc_info = "Accuracy: " + ", ".join(["{} {:4.2f}".format(
-                n[0], ave_metric[n].average() 
+                n[0], ave_metric[n].average()
                 if ave_metric[n].average() is not None else 0) for n in names])
             print('Epoch: [{}][{}/{}], Time: {:.2f}, Data: {:.2f}, '
                   'LR: encoder {:.6f}, decoder {:.6f}, {}, {}'
@@ -88,6 +88,17 @@ def train(segmentation_module, iterator, optimizers, history, epoch, args):
         adjust_learning_rate(optimizers, cur_iter, args)
 
 
+def load_ckpt(nets, ckpt_folder, epoch_num):
+    encoder, decoder = nets
+    suffix_latest = f'epoch_{epoch_num}.pth'
+
+    encoder_state = torch.load(f'{ckpt_folder}/encoder_{suffix_latest}')
+    decoder_state = torch.load(f'{ckpt_folder}/decoder_{suffix_latest}')
+
+    encoder.load(encoder_state)
+    decoder.load(decoder_state)
+
+
 def checkpoint(nets, history, args, epoch_num):
     print('Saving checkpoints...')
     (net_encoder, net_decoder) = nets
@@ -98,7 +109,7 @@ def checkpoint(nets, history, args, epoch_num):
 
     # dict_encoder_save = {k: v for k, v in dict_encoder.items() if not (k.endswith('_tmp_running_mean') or k.endswith('tmp_running_var'))}
     # dict_decoder_save = {k: v for k, v in dict_decoder.items() if not (k.endswith('_tmp_running_mean') or k.endswith('tmp_running_var'))}
-    
+
     torch.save(history,
                '{}/history_{}'.format(args.ckpt, suffix_latest))
     torch.save(dict_encoder,
@@ -207,6 +218,7 @@ def main(args):
         segmentation_module = SegmentationModule(
             net_encoder, net_decoder)
 
+
     print('1 Epoch = {} iters'.format(args.epoch_iters))
 
     # create loader iterator
@@ -224,6 +236,12 @@ def main(args):
     # Set up optimizers
     nets = (net_encoder, net_decoder)
     optimizers = create_optimizers(nets, args)
+
+    if args.start_epoch > 1:
+        print(f'starting from epoch {args.start_epoch}')
+        load_ckpt(nets, args.ckpt, args.start_epoch-1)
+        cur_iter = (args.epoch_iters - 1) + (args.start_epoch - 2) * args.epoch_iters
+        adjust_learning_rate(optimizers, cur_iter, args)
 
     # Main loop
     history = {'train': {'epoch': [], 'loss': [], 'acc': []}}
@@ -282,7 +300,7 @@ if __name__ == '__main__':
     # Data related arguments
     parser.add_argument('--workers', default=16, type=int,
                         help='number of data loading workers')
-    parser.add_argument('--imgSize', default=[300,375,450,525,600], nargs='+', type=int,
+    parser.add_argument('--imgSize', default=[300, 375, 450, 525, 600], nargs='+', type=int,
                         help='input image size of short edge (int or list)')
     parser.add_argument('--imgMaxSize', default=1000, type=int,
                         help='maximum input image size of long edge')
