@@ -95,8 +95,8 @@ def load_ckpt(nets, ckpt_folder, epoch_num):
     encoder_state = torch.load(f'{ckpt_folder}/encoder_{suffix_latest}')
     decoder_state = torch.load(f'{ckpt_folder}/decoder_{suffix_latest}')
 
-    encoder.load(encoder_state)
-    decoder.load(decoder_state)
+    encoder.load_state_dict(encoder_state)
+    decoder.load_state_dict(decoder_state)
 
 
 def checkpoint(nets, history, args, epoch_num):
