@@ -88,27 +88,35 @@ def train(segmentation_module, iterator, optimizers, history, epoch, args):
         adjust_learning_rate(optimizers, cur_iter, args)
 
 
-def load_ckpt(nets, ckpt_folder, epoch_num):
+def load_ckpt(nets, optimizers, ckpt_folder, epoch_num):
     encoder, decoder = nets
+    opt_encoder, opt_decoder = optimizers
     suffix_latest = f'epoch_{epoch_num}.pth'
 
     encoder_state = torch.load(f'{ckpt_folder}/encoder_{suffix_latest}')
     decoder_state = torch.load(f'{ckpt_folder}/decoder_{suffix_latest}')
 
+    opt_encoder_state = torch.load(f'{ckpt_folder}/opt_encoder_{suffix_latest}')
+    opt_decoder_state = torch.load(f'{ckpt_folder}/opt_decoder_{suffix_latest}')
+
     encoder.load_state_dict(encoder_state)
     decoder.load_state_dict(decoder_state)
 
+    opt_encoder.load_state_dict(opt_encoder_state)
+    opt_decoder.load_state_dict(opt_decoder_state)
 
-def checkpoint(nets, history, args, epoch_num):
+
+def checkpoint(nets, optimizers, history, args, epoch_num):
     print('Saving checkpoints...')
     (net_encoder, net_decoder) = nets
+    opt_encoder, opt_decoder = optimizers
     suffix_latest = 'epoch_{}.pth'.format(epoch_num)
 
     dict_encoder = net_encoder.state_dict()
     dict_decoder = net_decoder.state_dict()
 
-    # dict_encoder_save = {k: v for k, v in dict_encoder.items() if not (k.endswith('_tmp_running_mean') or k.endswith('tmp_running_var'))}
-    # dict_decoder_save = {k: v for k, v in dict_decoder.items() if not (k.endswith('_tmp_running_mean') or k.endswith('tmp_running_var'))}
+    opt_encoder_state = opt_encoder.state_dict()
+    opt_decoder_state = opt_decoder.state_dict()
 
     torch.save(history,
                '{}/history_{}'.format(args.ckpt, suffix_latest))
@@ -116,6 +124,9 @@ def checkpoint(nets, history, args, epoch_num):
                '{}/encoder_{}'.format(args.ckpt, suffix_latest))
     torch.save(dict_decoder,
                '{}/decoder_{}'.format(args.ckpt, suffix_latest))
+
+    torch.save(opt_encoder_state, f'{args.ckpt}/opt_encoder_{suffix_latest}')
+    torch.save(opt_decoder_state, f'{args.ckpt}/opt_decoder_{suffix_latest}')
 
 
 def group_weight(module):
@@ -239,9 +250,7 @@ def main(args):
 
     if args.start_epoch > 1:
         print(f'starting from epoch {args.start_epoch}')
-        load_ckpt(nets, args.ckpt, args.start_epoch-1)
-        cur_iter = (args.epoch_iters - 1) + (args.start_epoch - 2) * args.epoch_iters
-        adjust_learning_rate(optimizers, cur_iter, args)
+        load_ckpt(nets, optimizers, args.ckpt, args.start_epoch-1)
 
     # Main loop
     history = {'train': {'epoch': [], 'loss': [], 'acc': []}}
@@ -250,7 +259,7 @@ def main(args):
         train(segmentation_module, iterator_train, optimizers, history, epoch, args)
 
         # checkpointing
-        checkpoint(nets, history, args, epoch)
+        checkpoint(nets, optimizers, history, args, epoch)
 
     print('Training Done!')
 
