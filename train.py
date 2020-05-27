@@ -255,7 +255,12 @@ def main(args):
     # Main loop
     history = {'train': {'epoch': [], 'loss': [], 'acc': []}}
 
-    for epoch in range(args.start_epoch, args.num_epoch + 1):
+    if args.current_num_epoch:
+        last_epoch = args.start_epoch + args.current_num_epoch
+    else:
+        last_epoch = args.num_epoch
+
+    for epoch in range(args.start_epoch, last_epoch + 1):
         train(segmentation_module, iterator_train, optimizers, history, epoch, args)
 
         # checkpointing
@@ -305,6 +310,7 @@ if __name__ == '__main__':
                         help='weights regularizer')
     parser.add_argument('--fix_bn', default=0, type=int,
                         help='fix bn params')
+    parser.add_argument('--current-num-epoch', type=int, default=0)
 
     # Data related arguments
     parser.add_argument('--workers', default=16, type=int,
